@@ -1,6 +1,9 @@
+const { syncSchema } = require("../helpers/joiValidation");
+
 const handleSync = (req, res, next) => {
   const changes = req.body;
 
+  // Check if changes is an array
   if (!Array.isArray(changes)) {
     return next({
       statusCode: 400,
@@ -8,7 +11,29 @@ const handleSync = (req, res, next) => {
     });
   }
 
+  const validationErrors = [];
   changes.forEach((change, index) => {
+    const { error } = syncSchema.validate(change);
+    if (error) {
+      validationErrors.push({
+        index,
+        message: error.details[0].message, // Get the first validation error message
+      });
+    }
+  });
+
+  // If there are validation errors, respond with an error
+  if (validationErrors.length > 0) {
+    return next({
+      statusCode: 400,
+      message: `Validation errors: ${validationErrors
+        .map((err) => `At index ${err.index}: ${err.message}`)
+        .join(", ")}`,
+    });
+  }
+
+  // Log the change details
+  changes.forEach((change) => {
     const {
       range,
       newValue,
@@ -24,30 +49,6 @@ const handleSync = (req, res, next) => {
       sheetUrl,
       changeType,
     } = change;
-
-    const missingParams = [];
-    if (!range) missingParams.push("range");
-    if (newValue === undefined) missingParams.push("newValue");
-    if (oldValue === undefined) missingParams.push("oldValue");
-    if (!spreadsheetId) missingParams.push("spreadsheetId");
-    if (!userEmail) missingParams.push("userEmail");
-    if (!userRole) missingParams.push("userRole");
-    if (!localTimestamp) missingParams.push("localTimestamp");
-    if (!timestamp) missingParams.push("timestamp");
-    if (row === undefined) missingParams.push("row");
-    if (column === undefined) missingParams.push("column");
-    if (!sheetName) missingParams.push("sheetName");
-    if (!sheetUrl) missingParams.push("sheetUrl");
-    if (!changeType) missingParams.push("changeType");
-
-    if (missingParams.length > 0) {
-      return next({
-        statusCode: 400,
-        message: `Missing parameters in change at index ${index}: ${missingParams.join(
-          ", "
-        )}`,
-      });
-    }
 
     console.log("\n----------------------------------- \n");
     console.log(`Change detected in spreadsheet ID: ${spreadsheetId}`);
