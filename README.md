@@ -60,3 +60,13 @@ All the best ✨.
 
 ## Developer's Section
 *Add your video here, and your approach to the problem (optional). Leave some comments for us here if you want, we will be reading this :)*
+
+---
+
+- Noticed that i filled my name wrong in the form (so sorry 🥲)
+- Name - **Leharaditya Kumar**
+
+---
+
+- Have created [TODO.md](./TODO.md) which will have most of the ideas i have, to appraoch the project and plan of action and will be updating that itself. 
+
