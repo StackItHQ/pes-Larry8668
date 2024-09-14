@@ -33,3 +33,38 @@
     - Host it on vercel
 
 ---
+
+## Tables Schema
+
+![alt text](./diagrams/schema.png)
+
+---
+
+This schema should cover majority of the ground required for the entire project
+
+- **Owner table**
+    - maps each spreadsheet to the person who created/owns the spreadsheet
+    - may be useful for getting more info on spreadsheet
+
+- **Spreadsheet table**
+    - holds all the unique spreadsheet that are stored in db
+    - quick access to number of spreadsheets available
+
+- **Sheets table**
+    - maps each sheet to corresponding table
+    - quick access to number of sheets in a given spreadsheet
+
+- **Change logs**
+    - keeps track of all the changes done to the various spreadsheets stored in db
+    - acts like the git commit history
+
+---
+
+## Plan of action ⚔️
+- Right now the basic event based loop for checking updates in the sheet to getting in backend is done
+- Need to setup supabase and expose apt endpoints in backend
+- Figure out strategy for the updates other way around (webhooks maybe?)
+- Get frontend ready to show change logs - might need auth (not a prio)
+- Then the hard part - race conditions🏃‍♂️ and conflicts🤺
+
+---
