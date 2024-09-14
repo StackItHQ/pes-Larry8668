@@ -39,20 +39,29 @@ const handleSync = (req, res, next) => {
       newValue,
       oldValue,
       spreadsheetId,
+      spreadsheetName,
+      spreadsheetOwner,
+      creationDate,
       userEmail,
       userRole,
       localTimestamp,
       timestamp,
       row,
       column,
+      sheetId,
       sheetName,
       sheetUrl,
       changeType,
+      action,
     } = change;
 
     console.log("\n----------------------------------- \n");
     console.log(`Change detected in spreadsheet ID: ${spreadsheetId}`);
+    console.log(`Spreadsheet Name: ${spreadsheetName}`);
+    console.log(`Spreadsheet Owner: ${spreadsheetOwner}`);
+    console.log(`Spreadsheet Creation Date: ${creationDate}`);
     console.log(`Sheet Name: ${sheetName}`);
+    console.log(`Sheet Name: ${sheetId}`);
     console.log(`Cell Range: ${range} (Row: ${row}, Column: ${column})`);
     console.log(`New Value: ${newValue}`);
     console.log(`Old Value: ${oldValue}`);
@@ -62,6 +71,7 @@ const handleSync = (req, res, next) => {
     console.log(`UTC Timestamp: ${timestamp}`);
     console.log(`Sheet URL: ${sheetUrl}`);
     console.log(`Change Type: ${changeType}`);
+    console.log(`Action Performed: ${action}`);
   });
 
   res.status(200).send("Data received");
