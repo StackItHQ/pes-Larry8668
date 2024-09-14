@@ -68,3 +68,10 @@ This schema should cover majority of the ground required for the entire project
 - Then the hard part - race conditions🏃‍♂️ and conflicts🤺
 
 ---
+
+## Writing from server to Sheets
+- It is sort of working right now need to hit `/api/update-cell`. check out [this](./node-backend/src/controllers/updateSheetController.js)
+- Need to share sheet with `shreadsheet-writer@superjoin-assignment-435615.iam.gserviceaccount.com` as editor for it to work
+- Need to find a better way
+
+---
