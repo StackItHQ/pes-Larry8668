@@ -5,6 +5,4 @@ const VERCEL_ANON_KEY = process.env.VERCEL_ANON_KEY;
 
 const supabase = createClient(VERCEL_SUPABASE_URL, VERCEL_ANON_KEY);
 
-console.log(supabase);
-
 module.exports = supabase;
