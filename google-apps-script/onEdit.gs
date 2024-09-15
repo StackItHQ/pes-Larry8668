@@ -36,7 +36,7 @@ function onEdit(e) {
   };
 
   // Send the change data to your server
-  const url = 'https://4749-49-205-129-201.ngrok-free.app/api/sync';
+  const url = 'https://34a9-49-205-129-201.ngrok-free.app/api/sync';
   const options = {
     method: 'POST',
     contentType: 'application/json',

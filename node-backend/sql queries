@@ -42,32 +42,32 @@ CREATE TABLE IF NOT EXISTS changes_log (
     new_data JSONB[][],                        -- Array of JSONB arrays representing new states
     user_email TEXT,                           -- Email of the user making the change
     user_role TEXT,                            -- Role of the user (optional)
-    change_type TEXT,                          -- Type of change (e.g., "update", "delete", "insert")
+    change_type TEXT[],                        -- List of strings representing types of changes (e.g., "update", "delete", "insert")
     local_timestamp TIMESTAMP WITH TIME ZONE, -- Local timestamp of the change
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp when the record was created
 );
 
 -- trigger function to update the updated_at timestamp in sheet
 CREATE OR REPLACE FUNCTION update_sheet_updated_at()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     UPDATE sheet
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = NEW.sheet_id;  -- Update the corresponding sheet's updated_at
     RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- trigger function to update the updated_at timestamp in spreadsheet
 CREATE OR REPLACE FUNCTION update_spreadsheet_updated_at()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
     UPDATE spreadsheet
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = (SELECT spreadsheet_id FROM sheet WHERE id = NEW.sheet_id);  -- Update the corresponding spreadsheet's updated_at
     RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Drop Trigger if it exists for Sheet
 DROP TRIGGER IF EXISTS trigger_update_sheet_updated_at ON row;
