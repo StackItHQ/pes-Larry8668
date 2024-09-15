@@ -2,7 +2,13 @@
 
 ## Architecture in mind
 
-![High level design](./diagrams/HLD.png)
+![High level design](./diagrams/HLD2.png)
+
+*HLD modified* 
+
+- things got a quite complicated with managing everything with only apps script 
+- so will be using google sheets api to take off the load
+
 ---
 
 - **Google Sheets**
