@@ -1,4 +1,287 @@
+const { google } = require("googleapis");
 const supabase = require("../supabaseClient");
+
+const auth = new google.auth.GoogleAuth({
+  keyFile: "credentials.json",
+  scopes: "https://www.googleapis.com/auth/spreadsheets",
+});
+
+async function processSpreadsheet(spreadsheetId) {
+  // Check if the spreadsheet already exists
+  const { data: existingSpreadsheet, error: selectError } = await supabase
+    .from("spreadsheet")
+    .select("*")
+    .eq("spreadsheet_id", spreadsheetId)
+    .single();
+
+  if (selectError && selectError.code !== "PGRST116") {
+    throw selectError;
+  }
+
+  let spreadsheetData;
+
+  if (existingSpreadsheet) {
+    console.log("existingSpreadsheet", existingSpreadsheet);
+    spreadsheetData = existingSpreadsheet;
+  } else {
+    // Insert the new spreadsheet
+    const { error: insertError } = await supabase
+      .from("spreadsheet")
+      .insert([{ spreadsheet_id: spreadsheetId }])
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    const newSpreadsheet = await supabase
+      .from("spreadsheet")
+      .select("*")
+      .eq("spreadsheet_id", spreadsheetId)
+      .single();
+
+    spreadsheetData = newSpreadsheet.data;
+    console.log("newSpreadsheet", spreadsheetData);
+
+    // Get the list of sheets using Google Sheets API
+    const client = await auth.getClient();
+    const googleSheets = google.sheets({ version: "v4", auth: client });
+
+    const { data } = await googleSheets.spreadsheets.get({
+      spreadsheetId: spreadsheetId,
+    });
+
+    const sheets = data.sheets;
+
+    // Create new sheets in the database
+    for (const sheet of sheets) {
+      console.log("checking sheet", sheet);
+      await processSheet({
+        spreadsheetId: spreadsheetData.id,
+        sheetId: sheet.properties.sheetId,
+        sheetName: sheet.properties.title,
+        actualSpreadsheetId: spreadsheetId,
+      });
+    }
+  }
+
+  return { spreadsheetData, isNew: !existingSpreadsheet };
+}
+
+async function processSheet(sheetData) {
+  const { spreadsheetId, sheetId, sheetName, actualSpreadsheetId } = sheetData;
+
+  if (!spreadsheetId || !`${sheetId}` || !sheetName) {
+    throw new Error("Spreadsheet ID, sheet ID, and sheet name are required.");
+  }
+
+  const { data: existingSheet, error: selectError } = await supabase
+    .from("sheet")
+    .select("*")
+    .eq("sheet_id", sheetId)
+    .single();
+
+  if (selectError && selectError.code !== "PGRST116") {
+    throw selectError;
+  }
+
+  let sheetResult;
+
+  if (existingSheet) {
+    console.log("existingSheet", existingSheet);
+    sheetResult = existingSheet;
+  } else {
+    const { error: insertError } = await supabase
+      .from("sheet")
+      .insert([
+        {
+          spreadsheet_id: spreadsheetId,
+          sheet_name: sheetName,
+          sheet_id: sheetId,
+        },
+      ])
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    const newSheet = await supabase
+      .from("sheet")
+      .select("*")
+      .eq("sheet_id", sheetId)
+      .single();
+
+    sheetResult = newSheet.data;
+    console.log("newSheet", sheetResult);
+
+    // Fetch rows for the new sheet using actualSpreadsheetId
+    const client = await auth.getClient();
+    const googleSheets = google.sheets({ version: "v4", auth: client });
+
+    const rows = await googleSheets.spreadsheets.values.get({
+      auth,
+      spreadsheetId: actualSpreadsheetId,
+      range: `${sheetName}!A:ZZ`,
+    });
+
+    console.log("rows", rows);
+
+    if (rows.data.values && rows.data.values.length > 0) {
+      for (let i = 0; i < rows.data.values.length; i++) {
+        const rowData = {};
+        for (let j = 0; j < rows.data.values[i].length; j++) {
+          rowData[`col${j + 1}`] = rows.data.values[i][j];
+        }
+        console.log("rowData", rowData);
+        await processRow({
+          sheetId: sheetResult.id,
+          rowNo: i + 1,
+          data: rowData,
+          userEmail: "system@example.com",
+          userRole: "system",
+          localTimestamp: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  return { sheetResult, isNew: !existingSheet };
+}
+
+async function processRow(rowData) {
+  const { sheetId, rowNo, data, userEmail, userRole, localTimestamp } = rowData;
+
+  if (sheetId === undefined || rowNo === undefined || data === undefined) {
+    throw new Error(
+      "Sheet ID, row number, data, user email, user role, and local timestamp are required."
+    );
+  }
+
+  // Check if the row already exists
+  const { data: existingRow, error: selectError } = await supabase
+    .from("row")
+    .select("*")
+    .eq("sheet_id", sheetId)
+    .eq("row_no", rowNo)
+    .single();
+
+  let operation;
+  let oldRow = existingRow;
+  let newRow = null;
+
+  if (selectError && selectError.code !== "PGRST116") {
+    throw selectError;
+  }
+
+  if (existingRow) {
+    console.log("existingRow", existingRow);
+
+    // Check if the existing row's data is equivalent to the incoming data
+    const existingData = existingRow.data;
+    const dataKeys = new Set([
+      ...Object.keys(existingData),
+      ...Object.keys(data),
+    ]);
+
+    let hasChanges = false;
+    dataKeys.forEach((key) => {
+      if (existingData[key] !== data[key]) {
+        hasChanges = true;
+      }
+    });
+
+    if (!hasChanges) {
+      // Row data hasn't changed
+      operation = "no-change";
+      oldRow = existingRow;
+      newRow = existingRow;
+    } else if (Object.keys(data).length === 0) {
+      // Row data is empty, delete the row
+      const { data: deletedRow, error: deleteError } = await supabase
+        .from("row")
+        .delete()
+        .eq("id", existingRow.id)
+        .single();
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      operation = "delete";
+      oldRow = existingRow;
+      newRow = null;
+    } else {
+      // Update the row
+      const { error: updateError } = await supabase
+        .from("row")
+        .update({ data })
+        .eq("id", existingRow.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      const { data: updatedRow, error: fetchError } = await supabase
+        .from("row")
+        .select("*")
+        .eq("id", existingRow.id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      console.log("updatedRow", updatedRow);
+
+      operation = "update";
+      oldRow = existingRow;
+      newRow = updatedRow;
+    }
+  } else {
+    // Insert new row
+    const { error: insertError } = await supabase
+      .from("row")
+      .insert([{ sheet_id: sheetId, row_no: rowNo, data }])
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    const { data: insertedRow } = await supabase
+      .from("row")
+      .select("*")
+      .eq("sheet_id", sheetId)
+      .eq("row_no", rowNo)
+      .single();
+
+    console.log("insertedRow", insertedRow);
+
+    operation = "insert";
+    oldRow = null;
+    newRow = insertedRow;
+  }
+
+  // Create log payload
+  const logPayload = createLogPayload(
+    sheetId,
+    rowNo,
+    oldRow ? oldRow.data : null,
+    newRow ? newRow.data : null,
+    userEmail,
+    userRole,
+    operation,
+    localTimestamp
+  );
+
+  oldRow = oldRow ? oldRow.data : null;
+  newRow = newRow ? newRow.data : null;
+
+  return { oldRow, newRow, operation, logPayload };
+}
+
+// Handler functions
 
 const handleSpreadsheet = async (req, res, next) => {
   const { spreadsheetId } = req.body;
@@ -8,34 +291,8 @@ const handleSpreadsheet = async (req, res, next) => {
   }
 
   try {
-    // Check if the spreadsheet already exists
-    const { data: existingSpreadsheet, error: selectError } = await supabase
-      .from("spreadsheet")
-      .select("*")
-      .eq("spreadsheet_id", spreadsheetId)
-      .single();
-
-    if (selectError && selectError.code !== "PGRST116") {
-      throw selectError; // Not found
-    }
-
-    if (existingSpreadsheet) {
-      // Return the existing row
-      return res.status(200).json(existingSpreadsheet);
-    } else {
-      // Insert the new spreadsheet
-      const { data: newSpreadsheet, error: insertError } = await supabase
-        .from("spreadsheet")
-        .insert([{ spreadsheet_id: spreadsheetId }])
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // Return the inserted row
-      return res.status(201).json(newSpreadsheet);
-    }
+    const { spreadsheetData, isNew } = await processSpreadsheet(spreadsheetId);
+    return res.status(isNew ? 201 : 200).json(spreadsheetData);
   } catch (error) {
     console.error("Error handling spreadsheet:", error);
     res.status(500).send("Failed to handle spreadsheet.");
@@ -43,52 +300,47 @@ const handleSpreadsheet = async (req, res, next) => {
 };
 
 const handleSheet = async (req, res, next) => {
-  const { spreadsheetId, sheetId, sheetName } = req.body;
-
-  if (!spreadsheetId || !`${sheetId}` || !sheetName) {
-    return res.status(400).send({
-      message: "Spreadsheet ID, sheet ID, and sheet name are required.",
-    });
-  }
+  const { spreadsheetId, sheetId, sheetName, actualSpreadsheetId } = req.body;
 
   try {
-    // Check if the sheet already exists
-    const { data: existingSheet, error: selectError } = await supabase
-      .from("sheet")
-      .select("*")
-      .eq("sheet_id", sheetId)
-      .single();
-
-    if (selectError && selectError.code !== "PGRST116") {
-      throw selectError; // Not found
-    }
-
-    if (existingSheet) {
-      // Return the existing row
-      return res.status(200).json(existingSheet);
-    } else {
-      // Insert the new sheet
-      const { data: newSheet, error: insertError } = await supabase
-        .from("sheet")
-        .insert([
-          {
-            spreadsheet_id: spreadsheetId,
-            sheet_name: sheetName,
-            sheet_id: sheetId,
-          },
-        ])
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // Return the inserted row
-      return res.status(201).json(newSheet);
-    }
+    const { sheetResult, isNew } = await processSheet({
+      spreadsheetId,
+      sheetId,
+      sheetName,
+      actualSpreadsheetId,
+    });
+    return res.status(isNew ? 201 : 200).json(sheetResult);
   } catch (error) {
     console.error("Error handling sheet:", error);
     res.status(500).send("Failed to handle sheet.");
+  }
+};
+
+const handleRow = async (req, res, next) => {
+  try {
+    const { oldRow, newRow, operation, logPayload } = await processRow(
+      req.body
+    );
+
+    // Send log payload
+    const logChangeUrl = `${req.protocol}://${req.get("host")}/api/log-change`;
+    await fetch(logChangeUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(logPayload),
+    });
+
+    // Return the row data
+    return res.status(operation === "insert" ? 201 : 200).json({
+      prev: oldRow,
+      new: newRow,
+      operation,
+    });
+  } catch (error) {
+    console.error("Error handling row:", error);
+    res.status(500).send("Failed to handle row.");
   }
 };
 
@@ -113,153 +365,6 @@ const createLogPayload = (
     local_timestamp: localTimestamp,
     created_at: new Date().toISOString(),
   };
-};
-
-const handleRow = async (req, res, next) => {
-  const { sheetId, rowNo, data, userEmail, userRole, localTimestamp } =
-    req.body;
-
-  if (sheetId === undefined || rowNo === undefined || data === undefined) {
-    return res.status(400).send({
-      message:
-        "Sheet ID, row number, data, user email, user role, and local timestamp are required.",
-    });
-  }
-
-  try {
-    // Check if the row already exists
-    const { data: existingRow, error: selectError } = await supabase
-      .from("row")
-      .select("*")
-      .eq("sheet_id", sheetId)
-      .eq("row_no", rowNo)
-      .single();
-
-    let operation;
-    let oldRow = existingRow;
-    let newRow = null;
-
-    if (selectError && selectError.code !== "PGRST116") {
-      throw selectError; // Not found
-    }
-
-    if (existingRow) {
-      console.log("existingRow", existingRow);
-
-      // Check if the existing row's data is equivalent to the incoming data
-      const existingData = existingRow.data;
-      const dataKeys = new Set([
-        ...Object.keys(existingData),
-        ...Object.keys(data),
-      ]);
-
-      let hasChanges = false;
-      dataKeys.forEach((key) => {
-        if (existingData[key] !== data[key]) {
-          hasChanges = true;
-        }
-      });
-
-      if (!hasChanges) {
-        // Row data hasn't changed
-        operation = "no-change";
-        oldRow = existingRow;
-        newRow = existingRow;
-      } else if (Object.keys(data).length === 0) {
-        // Row data is empty, delete the row
-        const { data: deletedRow, error: deleteError } = await supabase
-          .from("row")
-          .delete()
-          .eq("id", existingRow.id)
-          .single();
-
-        if (deleteError) {
-          throw deleteError;
-        }
-
-        operation = "delete";
-        oldRow = existingRow;
-        newRow = null;
-      } else {
-        // Update the row
-        const { error: updateError } = await supabase
-          .from("row")
-          .update({ data })
-          .eq("id", existingRow.id)
-          .single();
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        const updatedRow = await supabase
-            .from("row")
-            .select("*")
-            .eq("id", existingRow.id)
-            .single();
-
-        console.log("updatedRow", updatedRow || data);
-
-        operation = "update";
-        oldRow = existingRow;
-        newRow = updatedRow || data;
-      }
-    } else {
-      // Insert new row
-      const { error: insertError } = await supabase
-        .from("row")
-        .insert([{ sheet_id: sheetId, row_no: rowNo, data }])
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      const insertedRow = await supabase
-        .from("row")
-        .select("*")
-        .eq("sheet_id", sheetId)
-        .eq("row_no", rowNo)
-        .single();
-
-      operation = "insert";
-      oldRow = null;
-      newRow = insertedRow;
-    }
-
-    // Create and send log payload
-    const logPayload = createLogPayload(
-      sheetId,
-      rowNo,
-      oldRow ? oldRow.data : null,
-      newRow ? newRow.data : null,
-      userEmail,
-      userRole,
-      operation,
-      localTimestamp
-    );
-
-    const logChangeUrl = `${req.protocol}://${req.get("host")}/api/log-change`;
-
-    await fetch(logChangeUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(logPayload),
-    });
-
-    // Respond based on the operation
-    const statusCode = operation === "insert" ? 201 : 200;
-    res.status(statusCode).json({
-      prev: oldRow ? oldRow.data : null,
-      new: newRow ? newRow.data : null,
-      operation,
-    });
-  } catch (error) {
-    console.error("Error handling row:", error);
-    res.status(500).send("Failed to handle row.");
-  }
 };
 
 module.exports = { handleSpreadsheet, handleSheet, handleRow };
