@@ -36,9 +36,11 @@
 
 ## Tables Schema
 
-![alt text](./diagrams/schema.png)
+![alt text](./diagrams/schema2.png)
 
 ---
+
+*(Schema updated)*
 
 This schema should cover majority of the ground required for the entire project
 
@@ -53,10 +55,16 @@ This schema should cover majority of the ground required for the entire project
 - **Sheets table**
     - maps each sheet to corresponding table
     - quick access to number of sheets in a given spreadsheet
+    - has the title for each sheet (1st row)
+
+- **Row table**
+    - keeps track of all rows of all sheets
+    - stores json object for each row
 
 - **Change logs**
     - keeps track of all the changes done to the various spreadsheets stored in db
     - acts like the git commit history
+    - stored the rows changed, prev state & new state
 
 ---
 
