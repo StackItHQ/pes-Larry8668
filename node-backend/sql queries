@@ -1,0 +1,82 @@
+--spreadsheet table
+CREATE TABLE IF NOT EXISTS spreadsheet (
+    id SERIAL PRIMARY KEY,                       -- Unique identifier for each spreadsheet (Primary Key)
+    spreadsheet_url TEXT NOT NULL,               -- URL of the spreadsheet
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the record was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp when the record was last updated
+);
+
+-- owner table
+CREATE TABLE IF NOT EXISTS owner (
+    owner_email TEXT PRIMARY KEY,               -- Owner's email ID (Primary Key)
+    spreadsheet_id INTEGER REFERENCES spreadsheet(id)  -- Foreign key referencing the Spreadsheet table
+);
+
+-- sheet table
+CREATE TABLE IF NOT EXISTS sheet (
+    id SERIAL PRIMARY KEY,                       -- Unique identifier for each sheet (Primary Key)
+    spreadsheet_id INTEGER REFERENCES spreadsheet(id),  -- Foreign key referencing the Spreadsheet table
+    sheet_name TEXT NOT NULL,                    -- Name of the sheet
+    sheet_id INTEGER NOT NULL,                   -- Unique identifier for the sheet (could be the Google Sheets ID)
+    title_json JSONB DEFAULT '{}'::JSONB,       -- JSON representation of the title (default to an empty JSON object)
+    has_title BOOLEAN DEFAULT TRUE,              -- Indicates if the sheet has a title (default to true)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the record was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp when the record was last updated
+);
+
+-- row table
+CREATE TABLE IF NOT EXISTS row (
+    id SERIAL PRIMARY KEY,                       -- Unique identifier for each row (Primary Key)
+    sheet_id INTEGER REFERENCES sheet(id),       -- Foreign key referencing the Sheet table
+    row_no INTEGER NOT NULL,                     -- Row number
+    data JSONB NOT NULL,                         -- JSON representation of the row data
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp when the record was created
+);
+
+-- change_logs table
+CREATE TABLE IF NOT EXISTS changes_log (
+    id SERIAL PRIMARY KEY,                     -- Unique identifier for each change
+    sheet_id INTEGER REFERENCES sheet(id),     -- Foreign key referencing the sheet table
+    rows_changed INTEGER[],                     -- Array of integers representing changed row indices
+    prev JSONB[],                              -- Array of JSONB objects representing previous states
+    new JSONB[],                               -- Array of JSONB objects representing new states
+    user_email TEXT,                           -- Email of the user making the change
+    user_role TEXT,                            -- Role of the user (optional)
+    change_type TEXT,                          -- Type of change (e.g., "update", "delete", "insert")
+    local_timestamp TIMESTAMP WITH TIME ZONE, -- Local timestamp of the change
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Timestamp when the record was created
+);
+
+-- trigger function to update the updated_at timestamp in sheet
+CREATE OR REPLACE FUNCTION update_sheet_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE sheet
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = NEW.sheet_id;  -- Update the corresponding sheet's updated_at
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- trigger function to update the updated_at timestamp in spreadsheet
+CREATE OR REPLACE FUNCTION update_spreadsheet_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE spreadsheet
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = (SELECT spreadsheet_id FROM sheet WHERE id = NEW.sheet_id);  -- Update the corresponding spreadsheet's updated_at
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- trigger to update the updated_at timestamp in sheet
+CREATE TRIGGER trigger_update_sheet_updated_at
+AFTER INSERT ON row
+FOR EACH ROW
+EXECUTE FUNCTION update_sheet_updated_at();
+
+-- trigger to update the updated_at timestamp in spreadsheet
+CREATE TRIGGER trigger_update_spreadsheet_updated_at
+AFTER INSERT ON row
+FOR EACH ROW
+EXECUTE FUNCTION update_spreadsheet_updated_at();
