@@ -89,3 +89,21 @@ This schema should cover majority of the ground required for the entire project
 - Need to find a better way
 
 ---
+
+## Finale 🥂
+
+- Everything is setup hosted and ready to use
+- Website can be found [here](https://sheet-saga.vercel.app/) and the repo which its hosted on is [this](https://github.com/Larry8668/sheet-saga)
+
+![alt text](./diagrams/website-preview.png)
+
+- The backend of the hosted website can be found [here](https://github.com/Larry8668/sheet-saga-backend)
+
+- I ve parallely made changes to this repo as well as both the hosted one. So this repo will have the latest code. (Hosted on separate repo as was unsure if i was allowed to host this repo)
+
+### Tackling conflicts
+- I plan to tackle conflicts in read write by maintaining a simple lock (sort of a mutex lock)
+- So any changes to db will be made only if lock is available
+- This will ensure and help prevent locking
+- As of now plan to use a queue in case of req that come in when lock is unavailable and then evaluate them based on first-come-first-serve
+- So this will behave sort of like the last-write wins
