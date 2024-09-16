@@ -83,10 +83,12 @@ This schema should cover majority of the ground required for the entire project
 
 ---
 
-## Writing from server to Sheets
-- It is sort of working right now need to hit `/api/update-cell`. check out [this](./node-backend/src/controllers/updateSheetController.js)
+## Step to make it work on any Sheets
 - Need to share sheet with `shreadsheet-writer@superjoin-assignment-435615.iam.gserviceaccount.com` as editor for it to work
-- Need to find a better way
+- The essential .gs files are [here](./google-apps-script/)
+- Create triggers in the apps script for your excel
+- onOpen -> call function onOpen
+- onEdit -> call function onEdit
 
 ---
 
@@ -100,6 +102,11 @@ This schema should cover majority of the ground required for the entire project
 - The backend of the hosted website can be found [here](https://github.com/Larry8668/sheet-saga-backend)
 
 - I ve parallely made changes to this repo as well as both the hosted one. So this repo will have the latest code. (Hosted on separate repo as was unsure if i was allowed to host this repo)
+
+- You can find the video explaination [here](https://www.loom.com/share/681424d03732430c95d9d0e752817967?sid=9421c72a-0b16-485b-bc25-ea661a91f53f)
+- P.S. if the link doesnt work it will be uploaded in the video folder [here](./video)  
+- P.P.S (sorry for the long vid - had a bunch of features to cover 🥲)
+
 
 ### Tackling conflicts
 - I plan to tackle conflicts in read write by maintaining a simple lock (sort of a mutex lock)

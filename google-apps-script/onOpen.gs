@@ -18,7 +18,7 @@ function authorizeAndRun() {
   Logger.log('Creation Date: ' + creationDate); // Log creation date
 
   // Prepare the API request
-  const url = 'https://34a9-49-205-129-201.ngrok-free.app/api/spreadsheet';
+  const url = 'https://sheet-saga-backend.vercel.app/api/spreadsheet';
   const payload = {
     spreadsheetId: spreadsheetId
   };
@@ -38,10 +38,10 @@ function authorizeAndRun() {
   if (response.getResponseCode() === 200 || response.getResponseCode() === 201) {
     // Assuming the API returns a success message
     const apiResponse = JSON.parse(response.getContentText());
-    const message = apiResponse.message || 'Sync ready'; // Default message if none provided
+    const message = apiResponse.message || 'Sync setup 🎉 \n You are ready to go 🚀'; // Default message if none provided
     SpreadsheetApp.getActiveSpreadsheet().toast(message, 'Success', 5); // Display toast for 5 seconds
   } else {
     // Handle error response
-    SpreadsheetApp.getActiveSpreadsheet().toast('Error syncing data', 'Error', 5);
+    SpreadsheetApp.getActiveSpreadsheet().toast('Error syncing data ❌', 'Error', 5);
   }
 }

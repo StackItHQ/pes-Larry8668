@@ -66,7 +66,7 @@ const Update = () => {
 
     try {
       if (action === "insert") {
-        const response = await fetch("http://localhost:3000/api/row-append", {
+        const response = await fetch("https://sheet-saga-backend.vercel.app/api/row-append", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -86,7 +86,7 @@ const Update = () => {
           toast.error(data.message || "Failed to append row.");
         }
       } else if (action === "update") {
-        const response = await fetch("http://localhost:3000/api/row-update", {
+        const response = await fetch("https://sheet-saga-backend.vercel.app/api/row-update", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -104,7 +104,7 @@ const Update = () => {
           toast.error(data.message || "Failed to update row.");
         }
       } else if (action === "delete") {
-        const response = await fetch("http://localhost:3000/api/row-delete", {
+        const response = await fetch("https://sheet-saga-backend.vercel.app/api/row-delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ spreadsheetId, sheetId, row: rowNo }),
