@@ -20,8 +20,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/logs" element={<Logs />} />
           <Route path="/update" element={<Update />} />
         </Routes>
+        <Footer />
       </Router>
-      <Footer />
     </NextUIProvider>
   </StrictMode>
 );

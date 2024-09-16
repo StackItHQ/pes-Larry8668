@@ -8,6 +8,11 @@ import { FaNodeJs } from "react-icons/fa";
 import { SiGooglesheets } from "react-icons/si";
 import { FaReact } from "react-icons/fa";
 
+import step1 from "./assets/steps/step-1.png";
+import step2 from "./assets/steps/step-2.png";
+import step3 from "./assets/steps/step-3.png";
+import step4 from "./assets/steps/step-4.png";
+
 const tools = [
   { name: "Supabase", icon: RiSupabaseLine },
   { name: "PostgreSQL", icon: SiPostgresql },
@@ -17,10 +22,34 @@ const tools = [
 ];
 
 const steps = [
-  "Sign up for the app",
-  "Connect your tools",
-  "Monitor and Sync data",
-  "Customize your settings",
+  {
+    number: "01",
+    title: "Setup essential scripts",
+    description:
+      "Head over to Extension > Apps Script in the toolbar in your sheet and insert the .gs files provided in the repository.",
+    image: step1,
+  },
+  {
+    number: "02",
+    title: "Add service account",
+    description:
+      "Invite the service account email mentioned in the README to your Google Sheet and give it the editor permissions.",
+    image: step2,
+  },
+  {
+    number: "03",
+    title: "Refresh your Sheet & Run the script",
+    description:
+      "After refreshing your sheet, you can run the script by clicking clicking on Permission > Authorize and Run. It will ask for permission, Don't worry its safe.",
+    image: step3,
+  },
+  {
+    number: "04",
+    title: "And that's it!",
+    description:
+      "Once notified that the sync is ready you are free to use the sheet as you like, and we will take care of the rest.",
+    image: step4,
+  },
 ];
 
 const App = () => {
@@ -78,17 +107,37 @@ const App = () => {
         {steps.map((step, index) => (
           <motion.div
             key={index}
-            className="w-full h-screen flex flex-col justify-center items-center bg-white"
+            className="w-full h-screen flex flex-col md:flex-row justify-center items-center bg-white"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="text-6xl font-bold text-gray-200 mb-4">
-              {index + 1}
+            <div
+              className={`w-full md:w-1/2 p-4 md:p-0 ${
+                index % 2 === 0 ? "md:order-1" : "md:order-2"
+              }`}
+            >
+              <img
+                src={step.image}
+                alt={`Step ${step.number}`}
+                className="w-full max-w-md md:max-w-xl mx-auto rounded-lg shadow-lg"
+              />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-center px-4">
-              {step}
-            </h2>
+            <div
+              className={`w-full md:w-1/2 mt-8 md:mt-0 px-10 md:p-0 ${
+                index % 2 === 0 ? "md:order-2" : "md:order-1"
+              }`}
+            >
+              <div className="max-w-md mx-auto">
+                <div className="text-5xl md:text-8xl font-bold text-gray-200 mb-4">
+                  {step.number}
+                </div>
+                <h3 className="text-xl md:text-3xl font-bold mb-4">
+                  {step.title}
+                </h3>
+                <p className="text-lg text-gray-600">{step.description}</p>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>

@@ -31,7 +31,7 @@ const NavBar = () => {
     >
       <div className="flex justify-between items-center px-4 md:px-8 h-12 md:h-20 overflow-hidden">
         <a className="text-md md:text-2xl font-bold cursor-pointer" href="/">
-          <img src={logo} className="w-44" />
+          <img src={logo} className="w-24 md:w-44" />
         </a>
         <div className="md:flex justify-center items-center gap-8 hidden font-semibold">
           {routes.map((route) => (
