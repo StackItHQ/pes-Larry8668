@@ -1,0 +1,32 @@
+{
+  "name": "sheet-saga",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@nextui-org/react": "^2.4.8",
+    "@supabase/supabase-js": "^2.45.4",
+    "framer-motion": "^11.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.3.0",
+    "react-loader-spinner": "^6.1.6",
+    "react-router-dom": "^6.26.2",
+    "sonner": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.11",
+    "vite": "^5.4.1"
+  }
+}
