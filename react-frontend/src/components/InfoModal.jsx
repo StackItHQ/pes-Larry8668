@@ -14,9 +14,12 @@ const InfoModal = ({ onClose }) => (
         className="mt-4 rounded-md overflow-scroll md:max-w-xl"
       />
       <div className="w-full p-5">
-        Here one you can try : <span className="p-1 rounded bg-slate-200 font-semibold">18FQiZu3F4rnP31IslQwNnknd6ZwCA6A4G2Lpd-kmnQo</span>
+        Here one you can try :{" "}
+        <span className="p-1 rounded bg-slate-200 font-semibold">
+          18FQiZu3F4rnP31IslQwNnknd6ZwCA6A4G2Lpd-kmnQo
+        </span>
       </div>
-      <p className="mb-4 w-full px-5">
+      <p className="mb-4 w-full p-5">
         Enter a Spreadsheet ID in the search bar to view all associated logs.
         The logs show changes made to sheets within the spreadsheet, including
         insertions (green), deletions (red), and updates (yellow).

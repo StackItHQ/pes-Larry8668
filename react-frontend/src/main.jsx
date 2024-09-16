@@ -9,6 +9,7 @@ import Logs from "./pages/Logs";
 import Update from "./pages/Update";
 import NavBar from "./components/NavBar.jsx";
 import Footer from "./components/Footer.jsx";
+import { Toaster } from "sonner";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -23,5 +24,6 @@ createRoot(document.getElementById("root")).render(
         <Footer />
       </Router>
     </NextUIProvider>
+    <Toaster position="bottom-right" />
   </StrictMode>
 );

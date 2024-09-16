@@ -36,7 +36,7 @@ const updateEntireRow = async (req, res) => {
     }
 
     // Convert row to A1 notation
-    const range = `${sheetName ? sheetName + "!" : ""}${row}:${row}`;
+    const range = `${sheetName ? sheetName + "!" : ""}${row + 1}:${row + 1}`;
 
     // Update the entire row
     const response = await sheets.spreadsheets.values.update({
@@ -86,8 +86,8 @@ const deleteRow = async (req, res) => {
           range: {
             sheetId: sheetId,
             dimension: "ROWS",
-            startIndex: row - 1, // 0-based index
-            endIndex: row, // Exclusive
+            startIndex: row, // 0-based index
+            endIndex: row + 1, // Exclusive
           },
         },
       },

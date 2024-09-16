@@ -12,6 +12,7 @@ import step1 from "./assets/steps/step-1.png";
 import step2 from "./assets/steps/step-2.png";
 import step3 from "./assets/steps/step-3.png";
 import step4 from "./assets/steps/step-4.png";
+import step5 from "./assets/steps/step-5.png";
 
 const tools = [
   { name: "Supabase", icon: RiSupabaseLine },
@@ -49,6 +50,13 @@ const steps = [
     description:
       "Once notified that the sync is ready you are free to use the sheet as you like, and we will take care of the rest.",
     image: step4,
+  },
+  {
+    number: "05",
+    title: "View all logs for changes made to your sheet",
+    description:
+      "Check out the Logs page to see all the changes made to your sheet since you have synced. From insertions to deletions, we have got you covered.",
+    image: step5,
   },
 ];
 
